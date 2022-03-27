@@ -1,19 +1,16 @@
-"""
-The basis for working with a telegram.
-Commands are registered to which the bot will respond.
-
-DO NOT USE FOR BASIC LOGIC.
-"""
 import logging
 from asyncio import get_event_loop
 from asyncpgsa import pg
 from misc import dp
 from configs import DataBaseConfig
 
-from aiogram import executor
 from aiogram import Bot, types
-from aiogram.types import Message
 from aiogram.dispatcher import Dispatcher
+from aiogram.utils import executor
+from aiogram.types import CallbackQuery
+from keyboards.inline.callback_datas import yes_no_choice_callback
+from keyboards.inline.choice_buttons import choice
+from DAO import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,50 +35,27 @@ async def init_connection():
         max_size=10
     )
 
-#Имитатор бд############################
-def obl_id(id_):
-    d = {
-        0: 'Нет',
-        1: 'Да',
-    }
-    return d[id_]
-
-
-def id_obl(id_):
-    d = {
-        'Нет': 0,
-        'Да': 1,
-    }
-    return d[id_]
-
-
-def obl_names():
-    return ['Да', 'Нет']
-
-
-def obl_con_obl_list():
-    return [[None, 0], [0, 1]]
-########################################
-
 @dp.message_handler(lambda message: types.Message)
-async def show_que(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for i in obl_con_obl_list():
-        buttons = [obl_id(i[1])]
-        keyboard.add(*buttons)
-    await message.answer("кк", reply_markup=keyboard)
+async def show_items(message: types.Message):
+    await message.answer(text="Есть?", reply_markup=choice)
 
 
-@dp.message_handler(lambda message: message.text == "Да")
-async def show_yes_menu(message: types.Message):
-    #Пользователя устроил ответ => ДА заносится в бд
+@dp.callback_query_handler(yes_no_choice_callback.filter(item="Yes"))
+async def choice_yes(call: CallbackQuery):
+    # Пользователя устроил ответ => ДА заносится в бд
+    #user_id = message.from_user.id
+    #get_or_create(Yes, user_id, feedback->yes)
     pass
+    await call.message.answer("Отлично")
 
 
-@dp.message_handler(lambda message: message.text == "Нет")
-async def show_no_menu(message: types.Message):
-    #Пользователя не устроил ответ => НЕТ заносится в бд
+@dp.callback_query_handler(yes_no_choice_callback.filter(item="No"))
+async def choice_no(call: CallbackQuery):
+    # Пользователя не устроил ответ => НЕТ заносится в бд
+    # user_id = message.from_user.id
+    # get_or_create(No, user_id, feedback->no)
     pass
+    await call.message.answer("Жаль")
 
 
 @dp.message_handler(commands=['find'])
